@@ -1756,6 +1756,13 @@
   dependencies:
     "@types/node" "*"
 
+"@types/dotenv-defaults@^2.0.1":
+  version "2.0.1"
+  resolved "https://registry.yarnpkg.com/@types/dotenv-defaults/-/dotenv-defaults-2.0.1.tgz#773615b6bb1f281365f6b3b650390eea64eb8b69"
+  integrity sha512-pH/45waKTwuwGszC893XdP9Dnj4LFtjranprQ7v3j6j4HdDyrhSF1ybHHWxZ2qp6KIrabN7zG3HeV4Y7OUVnww==
+  dependencies:
+    dotenv "^8.2.0"
+
 "@types/express-serve-static-core@^4.17.9":
   version "4.17.30"
   resolved "https://registry.yarnpkg.com/@types/express-serve-static-core/-/express-serve-static-core-4.17.30.tgz#0f2f99617fa8f9696170c46152ccf7500b34ac04"
@@ -1769,6 +1776,13 @@
   version "0.0.36"
   resolved "https://registry.yarnpkg.com/@types/isomorphic-fetch/-/isomorphic-fetch-0.0.36.tgz#3a6d8f63974baf26b10fd1314db910633108a769"
   integrity sha512-ulw4d+vW1HKn4oErSmNN2HYEcHGq0N1C5exlrMM0CRqX1UUpFhGb5lwiom5j9KN3LBJJDLRmYIZz1ghm7FIzZw==
+
+"@types/lodash.chunk@^4.2.7":
+  version "4.2.7"
+  resolved "https://registry.yarnpkg.com/@types/lodash.chunk/-/lodash.chunk-4.2.7.tgz#df52478072f0673d9fe8d3dd43af8f490d07a56a"
+  integrity sha512-//tmaWHiANgToom/YYYKKqiCtlNz11fwYtMUUbaemNSbWTI+2zHtYW5nt1PHNCRWHPAJHHhn4UVFD9LKUFvatA==
+  dependencies:
+    "@types/lodash" "*"
 
 "@types/lodash.merge@^4.6.6":
   version "4.6.7"
@@ -2456,10 +2470,27 @@ dot-case@^3.0.4:
     no-case "^3.0.4"
     tslib "^2.0.3"
 
+dotenv-defaults@^5.0.2:
+  version "5.0.2"
+  resolved "https://registry.yarnpkg.com/dotenv-defaults/-/dotenv-defaults-5.0.2.tgz#065c410ea516011651e9c60dae0c8902ec53d609"
+  integrity sha512-y5z4NhblzwNk8XBIYVzjLcFkANK0rxbRDO6kGOfH9QrVYIGVEX52IqwSprKVsaLHM9pnNkCSxazZF/JPydDPvA==
+  dependencies:
+    dotenv "^14.0.0"
+
 dotenv@10.0.0:
   version "10.0.0"
   resolved "https://registry.yarnpkg.com/dotenv/-/dotenv-10.0.0.tgz#3d4227b8fb95f81096cdd2b66653fb2c7085ba81"
   integrity sha512-rlBi9d8jpv9Sf1klPjNfFAuWDjKLwTIJJ/VxtoTwIR6hnZxcEOQCZg2oIL3MWBYw5GpUDKOEnND7LXTbIpQ03Q==
+
+dotenv@^14.0.0:
+  version "14.3.2"
+  resolved "https://registry.yarnpkg.com/dotenv/-/dotenv-14.3.2.tgz#7c30b3a5f777c79a3429cb2db358eef6751e8369"
+  integrity sha512-vwEppIphpFdvaMCaHfCEv9IgwcxMljMw2TnAQBB4VWPvzXQLTb82jwmdOKzlEVUL3gNFT4l4TPKO+Bn+sqcrVQ==
+
+dotenv@^8.2.0:
+  version "8.6.0"
+  resolved "https://registry.yarnpkg.com/dotenv/-/dotenv-8.6.0.tgz#061af664d19f7f4d8fc6e4ff9b584ce237adcb8b"
+  integrity sha512-IrPdXQsk2BbzvCBGBOTmmSH5SodmqZNt4ERAZDmW4CT+tL8VtvinqywuANaFu4bOMWki16nqf0e4oC0QIaDr/g==
 
 duplexer@~0.1.1:
   version "0.1.2"
@@ -3153,6 +3184,11 @@ lazy-ass@1.6.0:
   version "1.6.0"
   resolved "https://registry.yarnpkg.com/lazy-ass/-/lazy-ass-1.6.0.tgz#7999655e8646c17f089fdd187d150d3324d54513"
   integrity sha512-cc8oEVoctTvsFZ/Oje/kGnHbpWHYBe8IAJe4C0QNc3t8uM/0Y8+erSz/7Y1ALuXTEZTMvxXwO6YbX1ey3ujiZw==
+
+lodash.chunk@^4.2.0:
+  version "4.2.0"
+  resolved "https://registry.yarnpkg.com/lodash.chunk/-/lodash.chunk-4.2.0.tgz#66e5ce1f76ed27b4303d8c6512e8d1216e8106bc"
+  integrity sha512-ZzydJKfUHJwHa+hF5X66zLFCBrWn5GeF28OHEr4WVWtNDXlQ/IjWKPBiikqKo2ne0+v6JgCgJ0GzJp8k8bHC7w==
 
 lodash.clonedeep@^4.5.0:
   version "4.5.0"

@@ -6,14 +6,18 @@ import axios from "axios"
 import { parse } from "csv-parse"
 import fs from 'fs'
 import path from "path"
-// const ora = require("ora")
-
+import { config } from "dotenv-defaults"
 import ora from 'ora'
+import chunk from "lodash.chunk"
+
+config({
+  path: path.resolve("./.env")
+})
 
 const { Connection, Keypair, PublicKey, Transaction } = web3
 
-const RPC_PROVIDER = "https://fragrant-black-cherry.solana-devnet.quiknode.pro/74fbede70f2b8f6ed9b5bac5bfcda983e8bab832"
-const SENDING_WALLET_PRIVATE_KEY = "4AvywotvrULWc2vnwNaTDXueo2chUjkCZkGSyv6vWBZZJMkampgo7xcicKbVsw5BEA9A5JtoKnqWoq71HTzwkbUz"
+const RPC_PROVIDER = process.env.RPC_PROVIDER
+const SENDING_WALLET_PRIVATE_KEY = process.env.SENDING_WALLET_PRIVATE_KEY
 
 const connection = new Connection(RPC_PROVIDER)
 
@@ -22,88 +26,11 @@ async function createWallet() {
   return new Wallet(keypair)
 }
 
-async function requestNFTAirdrop(recipient) {
-  const response = await axios.get(`https://solana-syncer-staging.mirrorworld.fun/launchpad/fractal-faucet/${recipient}`)
-  return response.data
-}
-
-/**
- * Sends an NFT to a enw user.
- * @param mint NFT mint address to transfer to a new user
- * @param recipient Recipient's publicKey
- * @param wallet
- */
-async function transferNft(mint, recipient, wallet) {
-  const _mint = new PublicKey(mint);
-  const _recipient = new PublicKey(recipient);
-  
-  const txt = new Transaction();
-  
-  const senderAta = await getAssociatedTokenAddress(_mint, wallet.publicKey);
-  const recipientAta = await getAssociatedTokenAddress( _mint, _recipient);
-  
-  console.log('recipient  Associated Token Account', recipientAta);
-  
-  try {
-    // Here we attempt to get the account information
-    // for the user's ATA. If the account information
-    // is retrievable, we do nothing. However if it is not
-    // it will throw a "TokenAccountNotFoundError".
-    // This means that the recipient's token account has not
-    // yet been initialized on-chain.
-    await getAccountInfo(connection, recipientAta);
-  } catch (error) {
-    if (error.message === 'TokenAccountNotFoundError') {
-      const createAtaInstruction = await createAssociatedTokenAccountInstruction(
-        wallet.publicKey,
-        recipientAta,
-        _recipient,
-        _mint
-      );
-      
-      txt.add(createAtaInstruction);
-    }
-  }
-  
-  // const transferNftInstruction = await Token.createTransferInstruction(TOKEN_PROGRAM_ID, senderAta, recipientAta, wallet.publicKey, [], 1);
-  const transferNftInstruction = await createTransferInstruction(
-    senderAta,
-    recipientAta,
-    new PublicKey(wallet.publicKey),
-    1,
-    []
-  )
-  txt.add(transferNftInstruction);
-  
-  txt.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
-  txt.feePayer = wallet.publicKey;
-  
-  
-  let signed
-  
-  try {
-    signed = await wallet.signTransaction(txt);
-  } catch (e) {
-    console.error('sender cancelled transaction', e.message);
-    throw e;
-  }
-  
-  console.info('Sending the transaction to Solana.');
-  
-  const signature = await connection.sendRawTransaction(signed.serialize());
-  const result = await connection.confirmTransaction(signature, 'confirmed');
-  
-  if (result.value.err) {
-    throw new Error(result.value.err)
-  }
-  
-  console.log('result', result);
-  console.log('Successfully transferred nft ', mint, ' from ', wallet.publicKey.toBase58(), ' to ', _recipient.toBase58());
-  return [result, signature];
-}
 
 async function createBatchTransferTransaction(mints = [], recipients, from) {
+  
   const spinner = ora("Creating Batch Transfer Instructions").start()
+  
   const createAtaTransaction = new Transaction()
   const transferTransaction = new Transaction()
   
@@ -167,31 +94,44 @@ const signAndSendTransaction = async (wallet, transaction, transactionName = "Tr
   return [result, signature];
 }
 
-async function batchTransferNFTs(mints, recipients, wallet) {
-  const spinner = ora(`Starting Batch Transfer of ${mints.length} NFTs`).info().start()
-  const [createTokenAccountsTransaction, transferTokensTransaction] = await createBatchTransferTransaction(mints, recipients, wallet.publicKey)
-  createTokenAccountsTransaction.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
-  createTokenAccountsTransaction.feePayer = wallet.publicKey;
+async function batchTransferNFTs(_mints, _recipients, wallet) {
+  const mintChunks = chunk(_mints, 9)
+  const recipientChunks = chunk(_recipients, 9)
+  const createTokenAccountTransactionResults = []
+  const transferTokensTransactionResults = []
+  const chunkSpinner = ora(`Split mints into ${mintChunks.length}`).info()
   
-  spinner.stop()
-  const [createTokenAccountTransactionResult, createTokenAccountTransactionSignature] = await signAndSendTransaction(wallet, createTokenAccountsTransaction, "createTokenAccountsTransaction")
+  for (let i = 0; i < mintChunks.length; i++) {
+    const mints = mintChunks[i]
+    const recipients = recipientChunks[i]
+    chunkSpinner.info(`Chunk ${i + 1} of ${mintChunks.length}:: Starting Batch Transfer of ${mints.length} NFTs`).start()
+    const [createTokenAccountsTransaction, transferTokensTransaction] = await createBatchTransferTransaction(mints, recipients, wallet.publicKey)
+    createTokenAccountsTransaction.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+    createTokenAccountsTransaction.feePayer = wallet.publicKey;
   
-  if (createTokenAccountTransactionResult.value.err) {
-    throw new Error(createTokenAccountTransactionResult.value.err)
+    chunkSpinner.stop()
+    const [createTokenAccountTransactionResult, createTokenAccountTransactionSignature] = await signAndSendTransaction(wallet, createTokenAccountsTransaction, "createTokenAccountsTransaction")
+  
+    if (createTokenAccountTransactionResult.value.err) {
+      throw new Error(createTokenAccountTransactionResult.value.err)
+    }
+  
+    transferTokensTransaction.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+    transferTokensTransaction.feePayer = wallet.publicKey;
+    const [transferTokensTransactionResult, transferTokensTransactionSignature] = await signAndSendTransaction(wallet, transferTokensTransaction, "transferTokensTransaction")
+  
+    if (transferTokensTransactionResult.value.err) {
+      throw new Error(transferTokensTransactionResult.value.err)
+    }
+  
+    createTokenAccountTransactionResults.push([createTokenAccountTransactionResult, createTokenAccountTransactionSignature])
+    transferTokensTransactionResults.push([transferTokensTransactionResult, transferTokensTransactionSignature])
+    chunkSpinner.succeed(`Chunk ${i + 1} of ${mintChunks.length}:: Successfully performed batch transfer. ${mintChunks.length - (i + 1)} remaining.`)
   }
   
-  transferTokensTransaction.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
-  transferTokensTransaction.feePayer = wallet.publicKey;
-  const [transferTokensTransactionResult, transferTokensTransactionSignature] = await signAndSendTransaction(wallet, transferTokensTransaction, "transferTokensTransaction")
-  
-  if (transferTokensTransactionResult.value.err) {
-    throw new Error(transferTokensTransactionResult.value.err)
-  }
-  
-  spinner.succeed(`Successfully performed batch transfer of NFTs`)
   return {
-    createTokenAccounts: [createTokenAccountTransactionResult, createTokenAccountTransactionSignature],
-    transferTokens: [transferTokensTransactionResult, transferTokensTransactionSignature]
+    createTokenAccounts: createTokenAccountTransactionResults,
+    transferTokens: transferTokensTransactionResults,
   };
 }
 
@@ -259,7 +199,7 @@ async function main () {
   const [mintAddresses, recipients] = await parseCSV()
   const wallet = await createWallet()
   console.info(`starting batch transfer for ${mintAddresses.length} mints from ${wallet.publicKey.toBase58()} to`, recipients)
-  const {createTokenAccounts, transferTokens } = await batchTransferNFTs(mintAddresses, recipients, wallet)
+  const { createTokenAccounts, transferTokens } = await batchTransferNFTs(mintAddresses, recipients, wallet)
   console.info("createTokenAccounts", createTokenAccounts)
   console.info("transferTokens", transferTokens)
 }
