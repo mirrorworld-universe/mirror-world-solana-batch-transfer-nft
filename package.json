@@ -5,6 +5,9 @@
   "type": "module",
   "author": "codebender828 <jbakebwa@163.com>",
   "license": "MIT",
+  "scripts": {
+    "transfer": "node batch-transfer.js"
+  },
   "dependencies": {
     "@metaplex-foundation/js": "^0.14.0",
     "@mirrorworld/mirage.core": "2.0.0-alpha.1",
